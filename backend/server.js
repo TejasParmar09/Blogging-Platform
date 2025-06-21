@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 const auth = require('./routes/auth');
 const blogRoutes = require('./routes/blogs');
 const commentRoutes = require('./routes/comments');
@@ -14,7 +15,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', auth);
 app.use('/api/blogs', blogRoutes);

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import toast from 'react-hot-toast';
 
 const CreatePost = () => {
   const { id } = useParams();
@@ -99,16 +100,20 @@ const CreatePost = () => {
             'Content-Type': 'multipart/form-data',
           },
         });
+        toast.success('Blog updated successfully!');
       } else {
         await apiClient.post('/blogs', data, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        toast.success('Blog created successfully!');
       }
       navigate('/my-blogs');
     } catch (err) {
-      setError(err.response?.data?.message || `An error occurred while ${isEditing ? 'updating' : 'creating'} the post`);
+      const errorMessage = err.response?.data?.message || `An error occurred while ${isEditing ? 'updating' : 'creating'} the post`;
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

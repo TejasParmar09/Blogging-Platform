@@ -3,8 +3,7 @@ const Blog = require('../models/Blog');
 const Notification = require('../models/Notification');
 
 exports.createComment = async (req, res) => {
-  const { content } = req.body;
-  const { blogId } = req.params;
+  const { text: content, blogId } = req.body;
   const userId = req.user.id;
 
   try {
@@ -24,12 +23,13 @@ exports.createComment = async (req, res) => {
     blog.comments.push(comment._id);
     await blog.save();
 
-    if (blog.user && blog.user._id.toString() !== userId) {
+    if (blog.user._id.toString() !== userId) {
       const notification = new Notification({
         user: blog.user._id,
-        message: `${req.user.username} commented on your blog "${blog.title}"`,
-        type: 'comment',
+        from: userId,
         blog: blogId,
+        type: 'comment',
+        message: `commented on your blog "${blog.title}"`,
       });
       await notification.save();
     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import apiClient from '../services/api';
 import RecommendedBlogCard from '../components/RecommendedBlogCard';
+import CommentSection from '../components/CommentSection';
 import { FaHeart, FaRegHeart, FaCommentAlt, FaSmile, FaArrowLeft, FaShare } from 'react-icons/fa';
 import EmojiPicker from 'emoji-picker-react';
 import { getImageUrl } from '../services/api';
@@ -11,15 +12,12 @@ const BlogDetail = () => {
   const navigate = useNavigate();
 
   const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [recommendedBlogs, setRecommendedBlogs] = useState([]);
   const [likes, setLikes] = useState(0);
   const [liked, setLiked] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -28,7 +26,6 @@ const BlogDetail = () => {
 
   useEffect(() => {
     fetchPost();
-    fetchComments();
   }, [id]);
 
   useEffect(() => {
@@ -58,19 +55,10 @@ const BlogDetail = () => {
     }
   };
 
-  const fetchComments = async () => {
-    try {
-      const res = await apiClient.get(`/comments/${id}`);
-      setComments(res.data);
-    } catch (err) {
-      console.error('Failed to fetch comments:', err);
-    }
-  };
-
   const fetchRecommendedBlogs = async (categoryId) => {
     try {
-      const res = await apiClient.get(`/blogs?category=${categoryId}&exclude=${id}`);
-      if (res.data.length > 0) {
+      if (categoryId) {
+        const res = await apiClient.get(`/blogs?category=${categoryId}&exclude=${id}`);
         setRecommendedBlogs(res.data);
       } else {
         const latest = await getLatestBlogs();
@@ -78,6 +66,9 @@ const BlogDetail = () => {
       }
     } catch (err) {
       console.error('Failed to fetch recommended blogs:', err);
+      // Fallback to latest blogs in case of any error
+      const latest = await getLatestBlogs();
+      setRecommendedBlogs(latest);
     }
   };
 
@@ -125,30 +116,11 @@ const BlogDetail = () => {
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) return navigate('/login');
-
-    try {
-      const res = await apiClient.post(
-        `/comments/${id}`,
-        { content: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setComments(prev => [res.data, ...prev]);
-      setNewComment('');
-      setShowEmojiPicker(false);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post comment');
-    }
-  };
-
-  const handleEmojiClick = (emojiObject) => {
-    setNewComment(prev => prev + emojiObject.emoji);
-    setShowEmojiPicker(false);
+  const handleCommentAdded = (newComment) => {
+    setPost(prevPost => ({
+      ...prevPost,
+      comments: [...prevPost.comments, newComment],
+    }));
   };
 
   const handleShare = () => {
@@ -190,8 +162,8 @@ const BlogDetail = () => {
     <div className="min-h-screen bg-gray-900 text-gray-100 py-10 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto grid lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="mb-6 flex items-center text-blue-400 hover:text-blue-300 transition duration-200"
           >
             <FaArrowLeft className="mr-2" /> Back
@@ -250,124 +222,40 @@ const BlogDetail = () => {
                 <span>{likes} Likes</span>
               </button>
 
-              <button className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition duration-200">
-                <FaCommentAlt className="text-xl" /> {comments.length} Comments
-              </button>
+              <div className="flex items-center gap-2 text-gray-400">
+                <FaCommentAlt className="text-xl" />
+                <span>{post.comments?.length || 0} Comments</span>
+              </div>
 
-              <button 
+              <button
                 onClick={handleShare}
-                className="flex items-center gap-2 text-gray-400 hover:text-green-400 transition duration-200"
+                className="flex items-center gap-2 text-gray-400 hover:text-blue-400 transition duration-200"
               >
-                <FaShare className="text-xl" /> Share
+                <FaShare className="text-xl" />
+                <span>Share</span>
               </button>
             </div>
 
-            <div 
-              className="prose max-w-none text-gray-300 mb-8"
+            <div className="prose prose-invert max-w-none text-lg text-gray-300 leading-relaxed"
               dangerouslySetInnerHTML={{ __html: post.content }}
             ></div>
           </div>
 
-          <div className="border-t border-gray-700 pt-8">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <FaCommentAlt className="mr-3 text-blue-400" /> Comments
-            </h2>
-            
-            {currentUser && (
-              <form 
-                onSubmit={handleCommentSubmit} 
-                className="mb-8 p-4 bg-gray-700 rounded-lg shadow-sm relative"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                      {currentUser.username.charAt(0).toUpperCase()}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add a comment..."
-                      className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center mt-3 pl-13">
-                  <button 
-                    type="button"
-                    onClick={() => setShowEmojiPicker(prev => !prev)}
-                    className="p-2 text-gray-400 hover:text-blue-400 focus:outline-none transition duration-200"
-                  >
-                    <FaSmile size={20} />
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200"
-                    disabled={!newComment.trim()}
-                  >
-                    Post
-                  </button>
-                </div>
-                {showEmojiPicker && (
-                  <div className="absolute z-10 bottom-full left-0 mb-2">
-                    <EmojiPicker onEmojiClick={handleEmojiClick} />
-                  </div>
-                )}
-              </form>
-            )}
-
-            {comments.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <FaCommentAlt className="mx-auto text-3xl mb-3" />
-                <p>No comments yet. Be the first to comment!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment._id} className="bg-gray-700 p-4 rounded-lg shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                          {comment.user?.username?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 text-sm mb-1">
-                          <span className="font-semibold text-blue-400">{comment.user?.username || 'Anonymous'}</span>
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-400 text-xs">{formatDate(comment.createdAt)}</span>
-                        </div>
-                        <p className="text-gray-200">{comment.content}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <CommentSection blogId={id} currentUser={currentUser} onCommentAdded={handleCommentAdded} />
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 sticky top-4">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              Recommended
-            </h2>
-            {recommendedBlogs.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <p>No recommended blogs found at the moment.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recommendedBlogs.map(rb => (
-                  <RecommendedBlogCard key={rb._id} blog={rb} formatDate={formatDate} />
-                ))}
-              </div>
-            )}
+          <div className="sticky top-24">
+            <h3 className="text-xl font-bold text-white mb-4">Recommended For You</h3>
+            <div className="space-y-4">
+              {recommendedBlogs.length > 0 ? (
+                recommendedBlogs.map((blog) => (
+                  <RecommendedBlogCard key={blog._id} blog={blog} />
+                ))
+              ) : (
+                <p className="text-gray-500">No recommendations available.</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

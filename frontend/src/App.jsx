@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
@@ -9,12 +10,22 @@ import MyBlogs from './pages/MyBlogs';
 import AdminDashboard from './pages/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import ProfilePage from './pages/ProfilePage';
+import UserBlogs from './pages/UserBlogs';
 
 function App() {
   return (
     <Router>
       <div className="min-h-screen w-full bg-gray-50 flex flex-col">
         <Navbar />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
         
         {/* Make main take full width and expand to fill remaining height */}
         <main className="flex-1 w-full">
@@ -53,6 +64,14 @@ function App() {
               element={
                 <PrivateRoute requiredRole="admin">
                   <AdminDashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/blogs/user/:userId"
+              element={
+                <PrivateRoute requiredRole="admin">
+                  <UserBlogs />
                 </PrivateRoute>
               }
             />

@@ -3,7 +3,7 @@ const router = express.Router();
 const { createComment, getCommentsByBlogId, getAllComments, deleteComment } = require('../controller/CommentController');
 const authMiddleware = require('../middlewares/auth');
 
-router.post('/:blogId', authMiddleware, createComment);
+router.post('/', authMiddleware, createComment);
 router.get('/:blogId', getCommentsByBlogId);
 router.get('/', authMiddleware, getAllComments);
 router.delete('/:id', authMiddleware, deleteComment);

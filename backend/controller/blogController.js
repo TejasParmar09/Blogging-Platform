@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Blog = require('../models/Blog');
+const Notification = require('../models/Notification');
 const path = require('path');
 const fs = require('fs');
 
@@ -15,7 +16,7 @@ exports.createBlog = async (req, res) => {
       return res.status(400).json({ message: 'An image is required for the blog post.' });
     }
 
-    const image = req.file.path.replace(/\\/g, '/');
+    const image = path.join('uploads', req.file.filename).replace(/\\/g, '/');
 
     console.log('Image path being saved to DB:', image);
 
@@ -87,7 +88,7 @@ exports.getBlogs = async (req, res) => {
     const blogs = await Blog.find(filter)
       .populate('user category')
       .populate('comments')
-      .select('+image')
+      .select('_id title description content image user category comments likes createdAt')
       .sort({ createdAt: -1 });
     console.log('Blogs data being sent to frontend (getBlogs):', blogs);
     res.json(blogs);
@@ -177,7 +178,7 @@ exports.updateBlog = async (req, res) => {
           fs.unlinkSync(oldImagePath);
         }
       }
-      updateData.image = req.file.path.replace(/\\/g, '/');
+      updateData.image = path.join('uploads', req.file.filename).replace(/\\/g, '/');
     }
 
     const blog = await Blog.findByIdAndUpdate(
@@ -266,12 +267,13 @@ exports.likeBlog = async (req, res) => {
       blog.likes.pull(userId);
     } else {
       blog.likes.push(userId);
-      if (blog.user && blog.user.toString() !== userId) {
+      if (blog.user.toString() !== userId) {
         const notification = new Notification({
           user: blog.user,
-          message: `${req.user.username} liked your blog "${blog.title}"`,
-          type: 'like',
+          from: userId,
           blog: blogId,
+          type: 'like',
+          message: `liked your blog "${blog.title}"`,
         });
         await notification.save();
       }

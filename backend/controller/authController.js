@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+console.log('--- EXECUTING LATEST AUTH CONTROLLER CODE ---');
+
 const register = async (req, res) => {
   const { username, email, password, role } = req.body;
   
@@ -35,6 +37,7 @@ const register = async (req, res) => {
     const token = jwt.sign(
       { 
         id: user._id,
+        username: user.username,
         role: user.role 
       }, 
       process.env.JWT_SECRET, 
@@ -78,6 +81,7 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  console.log('--- LOGIN FUNCTION CALLED ---');
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -89,6 +93,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { 
         id: user._id,
+        username: user.username,
         role: user.role 
       }, 
       process.env.JWT_SECRET, 

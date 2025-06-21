@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -25,24 +26,14 @@ const Login = () => {
 
     try {
       const response = await apiClient.post('/auth/login', formData);
-      
-      const userData = {
-        id: response.data.user.id,
-        username: response.data.user.username,
-        email: response.data.user.email,
-        role: response.data.user.role
-      };
-      
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      if (userData.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      window.dispatchEvent(new Event('storage'));
+      toast.success('Logged in successfully!');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during login');
+      toast.error(err.response?.data?.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }

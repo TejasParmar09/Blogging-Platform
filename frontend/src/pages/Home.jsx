@@ -77,7 +77,7 @@ const Home = () => {
 
   const handleLike = async (blogId) => {
     try {
-      const response = await apiClient.put(`/blogs/${blogId}/like`);
+      const response = await apiClient.patch(`/blogs/${blogId}/like`);
       setPosts((prevPosts) =>
         prevPosts.map((post) => (post._id === blogId ? response.data : post))
       );

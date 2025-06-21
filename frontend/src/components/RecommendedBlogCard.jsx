@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../services/api';
 
-const RecommendedBlogCard = ({ blog, formatDate }) => {
+const RecommendedBlogCard = ({ blog }) => {
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
   return (
     <Link
       to={`/blogs/${blog._id}`}
@@ -9,7 +18,7 @@ const RecommendedBlogCard = ({ blog, formatDate }) => {
       {blog.image && (
         <div className="w-2/5 flex-shrink-0">
           <img
-            src={`http://localhost:5000/${blog.image}`}
+            src={getImageUrl(blog.image)}
             alt={blog.title}
             className="w-full h-full object-cover"
           />
