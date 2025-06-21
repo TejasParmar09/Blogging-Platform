@@ -17,6 +17,12 @@ const Navbar = () => {
   const searchContainerRef = useRef(null);
 
   useEffect(() => {
+    if (isAuthenticated) {
+      setIsDropdownOpen(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       try {
@@ -103,71 +109,91 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-blue-400">
+            <Link to={user?.role === 'admin' ? "/admin" : "/"} className="text-2xl font-bold text-blue-400">
               BlogHub
             </Link>
           </div>
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="relative" ref={searchContainerRef}>
-              <input
-                type="text"
-                placeholder="Search blogs..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                onKeyPress={handleSearchSubmit}
-                className="w-64 p-2 pl-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {isSearchResultsOpen && searchResults.length > 0 && (
-                <div className="absolute left-0 mt-1 w-full bg-white rounded-md shadow-xl z-20 max-h-96 overflow-y-auto">
-                  {searchResults.map(blog => (
-                    <Link
-                      key={blog._id}
-                      to={`/blogs/${blog._id}`}
-                      onClick={() => {
-                        setIsSearchResultsOpen(false);
-                        setSearchTerm('');
-                      }}
-                      className="block px-4 py-3 text-gray-800 hover:bg-gray-100"
-                    >
-                      <div className="font-medium">{blog.title}</div>
-                    </Link>
-                  ))}
-                </div>
+          {user?.role === 'admin' ? (
+            <div className="hidden md:flex items-center space-x-4">
+              <NavLink to="/admin" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Dashboard</NavLink>
+              <div className="relative" ref={dropdownRef}>
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center">
+                  <img 
+                    src={user.profileImage ? `http://localhost:5000/uploads/${user.profileImage}` : `https://via.placeholder.com/32?text=${user.username.charAt(0).toUpperCase()}`}
+                    alt={user.username}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-600 group-hover:border-blue-500"
+                  />
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20 border border-gray-700">
+                    <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Profile</Link>
+                    <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Logout</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="relative" ref={searchContainerRef}>
+                <input
+                  type="text"
+                  placeholder="Search blogs..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  onKeyPress={handleSearchSubmit}
+                  className="w-64 p-2 pl-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {isSearchResultsOpen && searchResults.length > 0 && (
+                  <div className="absolute left-0 mt-1 w-full bg-white rounded-md shadow-xl z-20 max-h-96 overflow-y-auto">
+                    {searchResults.map(blog => (
+                      <Link
+                        key={blog._id}
+                        to={`/blogs/${blog._id}`}
+                        onClick={() => {
+                          setIsSearchResultsOpen(false);
+                          setSearchTerm('');
+                        }}
+                        className="block px-4 py-3 text-gray-800 hover:bg-gray-100"
+                      >
+                        <div className="font-medium">{blog.title}</div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <NavLink to="/blogs" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Home</NavLink>
+              {isAuthenticated && user ? (
+                <>
+                  <NavLink to="/create" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800">Create Blog</NavLink>
+                  <NotificationDropdown user={user} />
+                  <div className="relative" ref={dropdownRef}>
+                    <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center">
+                      <img 
+                        src={user.profileImage ? `http://localhost:5000/uploads/${user.profileImage}` : `https://via.placeholder.com/32?text=${user.username.charAt(0).toUpperCase()}`}
+                        alt={user.username}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-gray-600 group-hover:border-blue-500"
+                      />
+                    </button>
+                    {isDropdownOpen && (
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20 border border-gray-700">
+                        <div className="px-4 py-2 border-b border-gray-700">
+                          <p className="text-sm font-semibold text-white truncate">{user.name || user.username}</p>
+                        </div>
+                        <Link to="/my-blogs" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Blogs</Link>
+                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Profile</Link>
+                        <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Logout</button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Login</Link>
+                  <Link to="/register" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700">Register</Link>
+                </>
               )}
             </div>
-            <NavLink to="/blogs" className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Home</NavLink>
-            {isAuthenticated && user ? (
-              <>
-                <NavLink to="/create" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800">Create Blog</NavLink>
-                <NotificationDropdown user={user} />
-                <div className="relative" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center">
-                    <img 
-                      src={user.profileImage ? `http://localhost:5000/uploads/${user.profileImage}` : `https://via.placeholder.com/32?text=${user.username.charAt(0).toUpperCase()}`}
-                      alt={user.username}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-600 group-hover:border-blue-500"
-                    />
-                  </button>
-                  {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20 border border-gray-700">
-                      <div className="px-4 py-2 border-b border-gray-700">
-                        <p className="text-sm font-semibold text-white truncate">{user.name || user.username}</p>
-                      </div>
-                      <Link to="/my-blogs" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">My Blogs</Link>
-                      <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Profile</Link>
-                      {user.role === 'admin' && <Link to="/admin" className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Admin</Link>}
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Logout</button>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Login</Link>
-                <Link to="/register" className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700">Register</Link>
-              </>
-            )}
-          </div>
+          )}
           <div className="-mr-2 flex md:hidden">
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700">
               <span className="sr-only">Open main menu</span>
@@ -179,32 +205,41 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <div className="relative" ref={searchContainerRef}>
-                <input
-                  type="text"
-                  placeholder="Search blogs..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  onKeyPress={handleSearchSubmit}
-                  className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none"
-                />
-            </div>
-            <NavLink to="/blogs" className={({ isActive }) => `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Home</NavLink>
-            {isAuthenticated && user ? (
+            {user?.role === 'admin' ? (
               <>
-                <NavLink to="/create" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Create Blog</NavLink>
-                <Link to="/my-blogs" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">My Blogs</Link>
+                <NavLink to="/admin" className={({ isActive }) => `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Dashboard</NavLink>
                 <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Profile</Link>
-                {user.role === 'admin' && <Link to="/admin" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Admin</Link>}
-                <div className="px-3 pt-2">
-                  <NotificationDropdown user={user} isMobile={true}/>
-                </div>
                 <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Logout</button>
               </>
             ) : (
               <>
-                <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Login</Link>
-                <Link to="/register" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700">Register</Link>
+                <div className="relative" ref={searchContainerRef}>
+                  <input
+                    type="text"
+                    placeholder="Search blogs..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onKeyPress={handleSearchSubmit}
+                    className="w-full p-3 rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none"
+                  />
+                </div>
+                <NavLink to="/blogs" className={({ isActive }) => `block px-3 py-2 rounded-md text-base font-medium ${isActive ? 'text-white bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-800'}`}>Home</NavLink>
+                {isAuthenticated && user ? (
+                  <>
+                    <NavLink to="/create" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Create Blog</NavLink>
+                    <Link to="/my-blogs" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">My Blogs</Link>
+                    <Link to="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Profile</Link>
+                    <div className="px-3 pt-2">
+                      <NotificationDropdown user={user} isMobile={true}/>
+                    </div>
+                    <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800">Logout</button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">Login</Link>
+                    <Link to="/register" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-700">Register</Link>
+                  </>
+                )}
               </>
             )}
           </div>

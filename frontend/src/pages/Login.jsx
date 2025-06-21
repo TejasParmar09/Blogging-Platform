@@ -30,7 +30,11 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       window.dispatchEvent(new Event('storage'));
       toast.success('Logged in successfully!');
-      navigate('/');
+      if (response.data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during login');
       toast.error(err.response?.data?.message || 'An error occurred during login');
